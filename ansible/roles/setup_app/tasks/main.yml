@@ -1,0 +1,24 @@
+---
+- name: Ensure Docker service is active and running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Pull or verify target Docker image
+  community.docker.docker_image:
+    name: "{{ docker_image }}"
+    source: pull
+  ignore_errors: true
+
+- name: Deploy Todo Application Container
+  community.docker.docker_container:
+    name: "{{ app_name }}"
+    image: "{{ docker_image }}"
+    state: started
+    restart_policy: always
+    published_ports:
+      - "{{ app_port }}:5000"
+    env:
+      PORT: "5000"
+  notify: Restart Todo Application Container

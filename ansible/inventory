@@ -1,0 +1,8 @@
+[webservers]
+localhost ansible_connection=local
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+app_name=devops-todo-app
+app_port=5000
+docker_image=devops-todo-app:latest

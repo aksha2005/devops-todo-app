@@ -1,0 +1,6 @@
+---
+- name: Deploy DevOps Todo Application
+  hosts: webservers
+  become: true
+  roles:
+    - setup_app
