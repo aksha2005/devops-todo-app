@@ -21,6 +21,9 @@ spec:
         ports:
         - containerPort: 5000
           name: http
+        envFrom:
+        - configMapRef:
+            name: devops-todo-config
         env:
         - name: PORT
           value: "5000"
