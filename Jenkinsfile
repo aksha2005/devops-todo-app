@@ -1,9 +1,9 @@
+
 pipeline {
     agent any
 
-    environment {
-        APP_NAME = 'devops-todo-app'
-        IMAGE_TAG = "devops-todo-app:${env.BUILD_NUMBER}"
+    options {
+        timestamps()
     }
 
     stages {
@@ -28,33 +28,38 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    pytest --junitxml=test-results.xml
+                    pytest -v --junitxml=test-results.xml
                 '''
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Generate Build Information') {
             steps {
                 sh '''
-                    docker build -t ${APP_NAME}:latest -t ${IMAGE_TAG} .
+                    echo "Application: DevOps Todo App" > build-info.txt
+                    echo "Build Number: ${BUILD_NUMBER}" >> build-info.txt
+                    echo "Git Commit: ${GIT_COMMIT}" >> build-info.txt
                 '''
-            }
-        }
-
-        stage('Clean Up') {
-            steps {
-                sh 'rm -rf venv'
             }
         }
     }
 
     post {
         always {
-            junit allowEmptyResults: true, testResults: 'test-results.xml'
+            junit allowEmptyResults: true,
+                  testResults: 'test-results.xml'
+
+            archiveArtifacts artifacts: 'test-results.xml,build-info.txt',
+                             allowEmptyArchive: true,
+                             fingerprint: true
+
+            sh 'rm -rf venv'
         }
+
         success {
             echo 'Pipeline completed successfully!'
         }
+
         failure {
             echo 'Pipeline failed. Check build logs.'
         }
