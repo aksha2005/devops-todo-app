@@ -2,6 +2,10 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+    }
+
     environment {
         APP_NAME = 'devops-todo-app'
         IMAGE_TAG = "devops-todo-app:${env.BUILD_NUMBER}"
@@ -58,25 +62,37 @@ pipeline {
             }
         }
 
+        stage('Generate Build Information') {
+            steps {
+                sh '''
+                    echo "Application: DevOps Todo App" > build-info.txt
+                    echo "Build Number: ${BUILD_NUMBER}" >> build-info.txt
+                    echo "Git Commit: ${GIT_COMMIT}" >> build-info.txt
+                '''
+            }
+        }
+
         stage('Archive Java JAR') {
             steps {
                 archiveArtifacts artifacts: 'java-todo-app/todo-app/target/*.jar',
                                  fingerprint: true
             }
         }
-
-        stage('Clean Up') {
-            steps {
-                sh 'rm -rf venv'
-            }
-        }
     }
 
     post {
         always {
-            junit allowEmptyResults: true, testResults: 'test-results.xml'
+            junit allowEmptyResults: true,
+                  testResults: 'test-results.xml'
+
             junit allowEmptyResults: true,
                   testResults: 'java-todo-app/todo-app/target/surefire-reports/TEST-*.xml'
+
+            archiveArtifacts artifacts: 'test-results.xml,build-info.txt',
+                             allowEmptyArchive: true,
+                             fingerprint: true
+
+            sh 'rm -rf venv'
         }
 
         success {
