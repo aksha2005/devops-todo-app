@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -13,7 +14,23 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Check Java Version') {
+            steps {
+                sh 'java -version'
+            }
+        }
+
+        stage('Build and Test Java Maven App') {
+            steps {
+                sh '''
+                    chmod +x java-todo-app/todo-app/mvnw
+                    java-todo-app/todo-app/mvnw -B \
+                      -f java-todo-app/todo-app/pom.xml clean verify
+                '''
+            }
+        }
+
+        stage('Install Python Dependencies') {
             steps {
                 sh '''
                     python3 -m venv venv
@@ -24,11 +41,11 @@ pipeline {
             }
         }
 
-        stage('Run Unit Tests') {
+        stage('Run Python Unit Tests') {
             steps {
                 sh '''
                     . venv/bin/activate
-                    pytest --junitxml=test-results.xml
+                    pytest -v --junitxml=test-results.xml
                 '''
             }
         }
@@ -38,6 +55,13 @@ pipeline {
                 sh '''
                     docker build -t ${APP_NAME}:latest -t ${IMAGE_TAG} .
                 '''
+            }
+        }
+
+        stage('Archive Java JAR') {
+            steps {
+                archiveArtifacts artifacts: 'java-todo-app/todo-app/target/*.jar',
+                                 fingerprint: true
             }
         }
 
@@ -51,12 +75,16 @@ pipeline {
     post {
         always {
             junit allowEmptyResults: true, testResults: 'test-results.xml'
+            junit allowEmptyResults: true,
+                  testResults: 'java-todo-app/todo-app/target/surefire-reports/TEST-*.xml'
         }
+
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Python and Java Maven pipelines completed successfully!'
         }
+
         failure {
-            echo 'Pipeline failed. Check build logs.'
+            echo 'Pipeline failed. Check the stage logs.'
         }
     }
 }

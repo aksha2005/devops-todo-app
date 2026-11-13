@@ -1,5 +1,2 @@
 ---
-- name: Restart Todo Application Container
-  community.docker.docker_container:
-    name: "{{ app_name }}"
-    state: restarted
+[]

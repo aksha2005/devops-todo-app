@@ -1,15 +1,18 @@
 ---
-- name: Ensure Docker service is active and running
-  ansible.builtin.service:
-    name: docker
-    state: started
-    enabled: true
+- name: Verify Docker daemon is accessible
+  ansible.builtin.command: docker info
+  changed_when: false
 
-- name: Pull or verify target Docker image
-  community.docker.docker_image:
+- name: Verify local Docker image exists
+  community.docker.docker_image_info:
     name: "{{ docker_image }}"
-    source: pull
-  ignore_errors: true
+  register: docker_image_info
+
+- name: Stop if the required Docker image is missing
+  ansible.builtin.assert:
+    that:
+      - docker_image_info.images | length > 0
+    fail_msg: "Required Docker image {{ docker_image }} is not available locally."
 
 - name: Deploy Todo Application Container
   community.docker.docker_container:
@@ -21,4 +24,3 @@
       - "{{ app_port }}:5000"
     env:
       PORT: "5000"
-  notify: Restart Todo Application Container
