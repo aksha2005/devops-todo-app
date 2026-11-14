@@ -3,3 +3,4 @@
 app_name: devops-todo-app
 app_port: 5000
 docker_image: devops-todo-app:latest
+deploy_dir: "{{ lookup('env', 'HOME') }}/devops-todo-app-deploy"
