@@ -24,9 +24,6 @@ spec:
         envFrom:
         - configMapRef:
             name: devops-todo-config
-        env:
-        - name: PORT
-          value: "5000"
         resources:
           requests:
             memory: "64Mi"

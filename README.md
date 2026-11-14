@@ -99,13 +99,15 @@ Jenkins is configured to retrieve the source code from GitHub and execute the CI
 
 Pipeline stages:
 
-1. Checkout source code from GitHub.
-2. Create a Python virtual environment.
-3. Install project dependencies.
-4. Execute automated unit tests.
-5. Generate build information.
-6. Publish JUnit test results.
-7. Archive build artifacts.
+1. Checkout from GitHub
+2. Check Java version
+3. Build and test the Java Maven app
+4. Install Python dependencies
+5. Run pytest
+6. Build the Docker image
+7. Generate build info
+8. Archive the JAR
+9. Publish the JUnit results
 
 The Jenkins pipeline uses Poll SCM to check the GitHub repository for changes.
 
@@ -144,7 +146,7 @@ The Ansible implementation includes:
 - Deployment playbook.
 - Reusable application role.
 - Variables for application configuration.
-- Handler to restart the application container.
+- Handler that verifies application health after a deployment change.
 - Idempotency verification.
 
 Run the playbook:
