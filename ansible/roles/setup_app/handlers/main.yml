@@ -1,2 +1,6 @@
 ---
-[]
+- name: Verify Todo Application Health
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ app_port }}/health"
+    method: GET
+    status_code: 200
