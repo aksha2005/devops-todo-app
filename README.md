@@ -205,3 +205,11 @@ GitHub: https://github.com/aksha2005/devops-todo-app
 Aksha K V
 
 Computer Science and Engineering (Cyber Security)
+
+## How to run the pipeline
+
+1. Install dependencies and run the tests: `pip install -r requirements.txt` then `pytest -v`
+2. Build the image: `docker build -t devops-todo-app:latest .`
+3. Configure and start the container with Ansible: `ansible-playbook -i ansible/inventory ansible/playbook.yml`
+4. Deploy to Minikube: `kubectl apply -f k8s/`
+5. Jenkins polls this repository and builds automatically when `main` changes.
