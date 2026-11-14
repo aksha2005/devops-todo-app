@@ -61,3 +61,8 @@ def test_delete_todo(client):
 def test_delete_todo_not_found(client):
     response = client.delete('/todos/9999')
     assert response.status_code == 404
+
+def test_version(client):
+    response = client.get('/version')
+    assert response.status_code == 200
+    assert response.get_json()["version"] == "1.0.0"

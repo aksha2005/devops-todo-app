@@ -68,6 +68,9 @@ def delete_todo(todo_id):
     todos = [t for t in todos if t['id'] != todo_id]
     return jsonify({"message": f"Todo {todo_id} deleted successfully"}), 200
 
+@app.route('/version')
+def version():
+    return jsonify({"version": "1.0.0"})
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
