@@ -1,0 +1,5 @@
+---
+# Role defaults (lowest precedence). The inventory's [all:vars] overrides these.
+app_name: devops-todo-app
+app_port: 5000
+docker_image: devops-todo-app:latest

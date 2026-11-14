@@ -1,0 +1,7 @@
+galaxy_info:
+  author: Aksha K V
+  description: Deploys the DevOps Todo Flask container with Docker and verifies its health
+  license: MIT
+  min_ansible_version: "2.16"
+  galaxy_tags: []
+dependencies: []
