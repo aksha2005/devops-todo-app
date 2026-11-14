@@ -1,4 +1,25 @@
 ---
+- name: Create release directory
+  ansible.builtin.file:
+    path: "{{ deploy_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Copy application files to the host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../{{ item }}"
+    dest: "{{ deploy_dir }}/{{ item }}"
+    mode: "0644"
+  loop:
+    - app.py
+    - requirements.txt
+
+- name: Render deployment info from variables
+  ansible.builtin.template:
+    src: deploy_info.txt.j2
+    dest: "{{ deploy_dir }}/deploy_info.txt"
+    mode: "0644"
+
 - name: Verify Docker daemon is accessible
   ansible.builtin.command: docker info
   changed_when: false
