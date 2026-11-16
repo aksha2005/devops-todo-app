@@ -1,217 +1,122 @@
-# DevOps Todo Application
+# DevOps Todo App: CI/CD Pipeline, Ansible and Kubernetes
 
-A simple Todo REST API built using Python Flask and deployed using Docker, Ansible, and Kubernetes. This project demonstrates DevOps practices including version control, automated testing, Continuous Integration (CI), containerization, configuration management, and container orchestration.
+Self Learning Activity for **DevOps (24CYAEC59)**, 5th Semester B.E. CSE (Cyber Security), M. S. Ramaiah Institute of Technology.
 
-## Project Overview
+- **Student:** Aksha K V (USN: 1MS25CY402)
+- **Guide:** Mr. Prashanth Reddy C, Senior Lecturer
+- **Repository:** https://github.com/aksha2005/devops-todo-app
 
-The DevOps Todo Application provides REST API endpoints to create, retrieve, update, and delete Todo tasks.
+One small application is taken through the whole pipeline:
 
-The project demonstrates an automated software delivery workflow using Git, Jenkins, Docker, Ansible, and Kubernetes.
+```
+Code -> Git/GitHub -> Maven + pytest -> Jenkins -> Docker -> Ansible -> Kubernetes (Minikube) -> Scale
+```
 
-## Technologies Used
+## Application
 
-| Technology | Purpose |
-|---|---|
-| Python | Backend programming |
-| Flask | REST API development |
-| Pytest | Automated testing |
-| Git and GitHub | Version control |
-| Jenkins | Continuous Integration |
-| Docker | Containerization |
-| Ansible | Configuration management and automation |
-| Kubernetes | Container orchestration |
-| Minikube | Local Kubernetes cluster |
+A Todo REST API written with Python Flask, with no database (records are kept in memory).
 
-## Application Features
-
-- Create new Todo tasks.
-- Retrieve all Todo tasks.
-- Update existing Todo tasks.
-- Delete Todo tasks.
-- Health-check endpoint.
-- Automated unit testing.
-
-## REST API Endpoints
-
-| Method | Endpoint | Description |
+| Method | Endpoint | Purpose |
 |---|---|---|
-| GET | `/` | Application home |
-| GET | `/health` | Application health check |
-| GET | `/todos` | Retrieve all Todo tasks |
-| POST | `/todos` | Create a Todo task |
-| PUT | `/todos/<id>` | Update a Todo task |
-| DELETE | `/todos/<id>` | Delete a Todo task |
+| GET | `/` | API information |
+| GET | `/health` | Health check, returns `{"status": "UP"}` |
+| GET | `/version` | Returns the application version |
+| GET | `/todos` | List all todos |
+| POST | `/todos` | Create a todo (title required) |
+| PUT | `/todos/<id>` | Update a todo |
+| DELETE | `/todos/<id>` | Delete a todo |
 
-## Run the Application Locally
+A separate Spring Boot Maven Todo API is in `java-todo-app/todo-app`. It is built and tested by Maven (`mvnw clean verify`) in the Jenkins pipeline to demonstrate the Maven build.
 
-### 1. Clone the repository
+## Repository structure
 
-```bash
-git clone https://github.com/aksha2005/devops-todo-app.git
-cd devops-todo-app
+```
+app.py, test_app.py, requirements.txt   Flask app and pytest tests
+Dockerfile                              Container image for the Flask app
+Jenkinsfile                             Jenkins pipeline (Pipeline from SCM)
+jenkins-docker/                         Jenkins image with Java, Python and Docker CLI
+.github/workflows/ci.yml                GitHub Actions workflow
+java-todo-app/todo-app/                 Spring Boot app with pom.xml and Maven Wrapper
+ansible/                                Inventory, playbook and the setup_app role
+k8s/                                    ConfigMap, Deployment and Service manifests
+repo_link.txt                           Repository link for submission
 ```
 
-### 2. Create a virtual environment
-
-```bash
-python -m venv venv
-```
-
-Activate it:
-
-**Windows:**
-```bash
-venv\Scripts\activate
-```
-
-**Linux/macOS:**
-```bash
-source venv/bin/activate
-```
-
-### 3. Install dependencies
+## Run locally
 
 ```bash
 pip install -r requirements.txt
+python app.py                 # starts on http://localhost:5000
+curl http://localhost:5000/health
+pytest -v                     # runs the Flask tests
 ```
 
-### 4. Run the application
+Java app tests:
 
 ```bash
-python app.py
+cd java-todo-app/todo-app
+./mvnw clean verify
 ```
 
-Open `http://localhost:5000` in your browser.
+## Component 1: Git, Maven and Jenkins (CI)
 
-## Automated Testing
+- Work was done on feature branches and merged into `main` through merges and pull requests.
+- The Jenkins job uses **Pipeline script from SCM** and reads the `Jenkinsfile` from this repository.
+- **Poll SCM** (`H/2 * * * *`) starts a build automatically when `main` changes. Polling is used because Jenkins runs locally in Docker and GitHub cannot send it a webhook.
+- Pipeline stages: Checkout, Check Java Version, Build and Test Java Maven App, Install Python Dependencies, Run Python Unit Tests, Build Docker Image, Generate Build Information, Archive Java JAR.
+- Post-build actions: publish JUnit results and archive the JAR, `test-results.xml` and `build-info.txt`.
+- **CI enhancements:** automated tests (Maven and pytest) in the pipeline, build-number Docker tags (`devops-todo-app:<build number>`), and a GitHub Actions workflow that also tests and builds the image on every push.
 
-Run the unit tests using:
+## Component 2: Ansible and Kubernetes
 
-```bash
-pytest -v
-```
-
-The project includes nine automated tests covering application routes, health checks, and Todo CRUD operations.
-
-## Jenkins Continuous Integration
-
-Jenkins is configured to retrieve the source code from GitHub and execute the CI pipeline.
-
-Pipeline stages:
-
-1. Checkout from GitHub
-2. Check Java version
-3. Build and test the Java Maven app
-4. Install Python dependencies
-5. Run pytest
-6. Build the Docker image
-7. Generate build info
-8. Archive the JAR
-9. Publish the JUnit results
-
-The Jenkins pipeline uses Poll SCM to check the GitHub repository for changes.
-
-Archived artifacts:
-
-- `test-results.xml`
-- `build-info.txt`
-
-## Docker
-
-Build the Docker image:
+**Docker**
 
 ```bash
 docker build -t devops-todo-app:latest .
-```
-
-Run the container:
-
-```bash
 docker run -d -p 5000:5000 --name devops-todo-app devops-todo-app:latest
 ```
 
-Check the running container:
+The image runs as a non-root user and has a container health check.
 
-```bash
-docker ps
-```
-
-## Ansible Automation
-
-Ansible is used to automate application container deployment.
-
-The Ansible implementation includes:
-
-- Inventory configuration.
-- Deployment playbook.
-- Reusable application role.
-- Variables for application configuration.
-- Handler that verifies application health after a deployment change.
-- Idempotency verification.
-
-Run the playbook:
+**Ansible** (inventory, variables, a handler and the `setup_app` role)
 
 ```bash
 ansible-playbook -i ansible/inventory ansible/playbook.yml
 ```
 
-## Kubernetes Deployment
+The role checks Docker, verifies the image exists, and starts the container. A handler then calls `/health` and requires HTTP 200. A second run reports `changed=0`, showing the playbook is idempotent.
 
-The application is deployed on a local Kubernetes cluster using Minikube.
-
-Kubernetes resources include:
-
-- Deployment with three replicas.
-- NodePort Service.
-- ConfigMap for application configuration.
-- Liveness probe.
-- Readiness probe.
-- CPU and memory resource requests and limits.
-
-Apply Kubernetes configurations:
+**Kubernetes on Minikube**
 
 ```bash
+minikube start
+minikube image load devops-todo-app:latest
 kubectl apply -f k8s/
-```
-
-Check deployments and pods:
-
-```bash
-kubectl get deployments
 kubectl get pods
-kubectl get services
+kubectl get svc
 ```
 
-Scale the deployment to five replicas:
+- `k8s/deployment.yaml`: 3 replicas, labels and selectors (`app: devops-todo-app`), liveness and readiness probes on `/health`, and CPU and memory requests and limits.
+- `k8s/service.yaml`: NodePort Service on port 30080 that forwards to container port 5000.
+- `k8s/configmap.yaml`: `PORT`, `APP_ENV` and `LOG_LEVEL`. This is the **deployment enhancement**, together with the health probes.
+
+Scaling demonstration:
 
 ```bash
 kubectl scale deployment devops-todo-app --replicas=5
-```
-
-Scale it back to three replicas:
-
-```bash
+kubectl get pods
 kubectl scale deployment devops-todo-app --replicas=3
 ```
 
-## Project Objective
+Open the app through the Minikube Service URL (see `minikube service list`) and check `/health` and `/todos`.
 
-The objective is to demonstrate how a simple application can be developed, tested, containerized, configured, and deployed using common DevOps tools and practices.
+## Test summary
 
-## Repository
+| Suite | Tests |
+|---|---|
+| Flask pytest (`test_app.py`) | 10 (9 originally, plus `test_version`) |
+| Java Maven (`TodoAppApplicationTests`) | 7 |
 
-GitHub: https://github.com/aksha2005/devops-todo-app
+## Tools used
 
-## Author
-
-Aksha K V
-
-Computer Science and Engineering (Cyber Security)
-
-## How to run the pipeline
-
-1. Install dependencies and run the tests: `pip install -r requirements.txt` then `pytest -v`
-2. Build the image: `docker build -t devops-todo-app:latest .`
-3. Configure and start the container with Ansible: `ansible-playbook -i ansible/inventory ansible/playbook.yml`
-4. Deploy to Minikube: `kubectl apply -f k8s/`
-5. Jenkins polls this repository and builds automatically when `main` changes.
+Python 3 and Flask, pytest, Java 21 and Spring Boot with Maven, Git and GitHub, Jenkins, GitHub Actions, Docker, Ansible (`community.docker`), Kubernetes with Minikube and kubectl.
